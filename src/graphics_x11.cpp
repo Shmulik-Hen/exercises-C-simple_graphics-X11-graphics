@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <iostream>
+#include <iomanip>
 #include <X11/Xutil.h>
 #include <graphics_x11.h>
 
@@ -7,27 +8,15 @@ namespace graphics_ns_base {
 
 namespace graphics_ns_x11 {
 
-#define RGB(r, g, b) ( \
-						(uint64_t) ( \
-							((uint8_t)(r)<<16) + \
-							((uint8_t)(g)<<8 ) + \
-							((uint8_t)(b)) \
-						) \
-					 )
-
-const uint64_t RED   = RGB(255, 0, 0);
-const uint64_t GREEN = RGB(0, 255, 0);
-const uint64_t BLUE  = RGB(0, 0, 255);
-
 const uint32_t DEFAULT_WIDTH  = 800;
 const uint32_t DEFAULT_HEIGHT = 600;
 const char* DEFAULT_NAME = "Display_X11";
+#define HEX(n, w) " 0x" << std::hex << std::setw((w)) << std::setfill('0') << (n)
 
 graphics::graphics() : _width{DEFAULT_WIDTH},
 		       _height{DEFAULT_HEIGHT},
 		       _name{DEFAULT_NAME}
 {
-	std::cout << "constructor 1" << std::endl;
 	try {
 		start();
 	}
@@ -41,7 +30,6 @@ graphics::graphics(const char* s) :
 	_height{DEFAULT_HEIGHT},
 	_name{s}
 {
-	std::cout << "constructor 2" << std::endl;
 	try {
 		start();
 	}
@@ -55,7 +43,6 @@ graphics::graphics(uint32_t w, uint32_t h) :
 	_height{h},
 	_name{DEFAULT_NAME}
 {
-	std::cout << "constructor 3" << std::endl;
 	try {
 		start();
 	}
@@ -69,7 +56,6 @@ graphics::graphics(uint32_t w, uint32_t h, const char *s) :
 	_height{h},
 	_name{s}
 {
-	std::cout << "constructor 4" << std::endl;
 	try {
 		start();
 	}
@@ -79,8 +65,6 @@ graphics::graphics(uint32_t w, uint32_t h, const char *s) :
 };
 
 graphics::~graphics() {
-	std::cout << "destructor" << std::endl;
-
 	if (_display) {
 		XCloseDisplay(_display);
 	}
@@ -103,9 +87,7 @@ void graphics::start()
 
 	_screen = DefaultScreen(_display);
 	_root = RootWindow(_display, _screen);
-	_fg = BlackPixel(_display, _screen);
-	_bg = WhitePixel(_display, _screen);
-	_window = XCreateSimpleWindow(_display, _root, 0, 0, _width, _height, 1, _fg, _bg);
+	_window = XCreateSimpleWindow(_display, _root, 0, 0, _width, _height, 1, colors::dark_grey, colors::black);
 	if (!_window) {
 		throw std::runtime_error("Unable to create window");
 	}
@@ -125,12 +107,12 @@ void graphics::start()
 		throw std::runtime_error("Unable to select input");
 	}
 
-	rc = XSetBackground(_display, _gc, _bg);
+	rc = XSetBackground(_display, _gc, colors::black);
 	if (!rc) {
 		throw std::runtime_error("Unable to set background");
 	}
 
-	rc = XSetForeground(_display, _gc, _fg);
+	rc = XSetForeground(_display, _gc, colors::dark_grey);
 	if (!rc) {
 		throw std::runtime_error("Unable to set forground");
 	}
@@ -173,14 +155,84 @@ void graphics::handle_event(XEvent& event) {
 };
 
 void graphics::draw() {
-	XSetForeground(_display, _gc, GREEN);
-	XFillRectangle(_display, _window, _gc, 1, 1, 50, 70);
-	XSetForeground(_display, _gc, BLUE);
-	XDrawLine(_display, _window, _gc, 100, 100, 200, 100);
-	XSetForeground(_display, _gc, RED);
-	for (int i = 300; i < 400; i++) {
-		XDrawPoint(_display, _window, _gc, i, i);
-	}
+	int x = 1, y = 1;
+
+	XSetForeground(_display, _gc, colors::white);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::grey);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::dark_grey);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::black);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x = 1;
+	y += 50;
+
+	XSetForeground(_display, _gc, colors::bright_red);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::red);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::dark_red);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::black);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x = 1;
+	y += 50;
+
+	XSetForeground(_display, _gc, colors::bright_green);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::green);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::dark_green);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::black);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x = 1;
+	y += 50;
+
+	XSetForeground(_display, _gc, colors::bright_blue);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::blue);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::dark_blue);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XSetForeground(_display, _gc, colors::black);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x = 1;
+	y += 50;
+
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
+	x += 50;
+
+	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
 };
 
 void graphics::run()

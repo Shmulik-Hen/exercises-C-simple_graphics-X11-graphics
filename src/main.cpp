@@ -11,7 +11,7 @@ int main()
 	int rc;
 
 	try {
-		graphics g("ggg");
+		graphics g;
 		g.run();
 	}
 	catch (const std::exception& e) {
