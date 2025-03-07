@@ -8,7 +8,7 @@ OBJS      := $(subst $(SRC_DIR),$(BLD_DIR),$(SRCS:%.cpp=%.o))
 DEPS      := $(OBJS:.o=.d)
 INC_FLAGS := $(addprefix -I,$(INC_DIR))
 CPPFLAGS  := -MMD -MP
-#LDFLAGS   += -lm
+LDFLAGS   += -lX11
 CXXFLAGS  += $(INC_FLAGS) -g -fdiagnostics-color=always
 
 .PHONY: all

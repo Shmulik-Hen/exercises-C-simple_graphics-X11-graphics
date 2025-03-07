@@ -1,7 +1,23 @@
+#include <chrono>
+#include <thread>
+#include <stdexcept>
 #include <iostream>
-//using namespace std;
+#include <graphics_x11.h>
 
-int main() {
-	std::cout << "Hello World!" << std::endl;
+using namespace graphics_ns_base::graphics_ns_x11;
+
+int main()
+{
+	int rc;
+
+	try {
+		graphics g("ggg");
+		g.run();
+	}
+	catch (const std::exception& e) {
+		std::cout << "Exception: " << e.what() << std::endl;
+		return -1;
+	}
+
 	return 0;
 }
