@@ -1,10 +1,14 @@
-#include <stdint.h>
+#ifndef __GRAPHICS_X11_H__
+#define __GRAPHICS_X11_H__
+
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <graphics_base.h>
+#include <runner_x11.h>
 
-namespace graphics_ns_base {
+//namespace graphics_ns_base {
 
-namespace graphics_ns_x11 {
+//namespace graphics_ns_x11 {
 
 #define CMASK 0x00FFFFFF
 #define MAXC  0xFF
@@ -17,54 +21,38 @@ namespace graphics_ns_x11 {
 #define B(x) ((x) & MAXC)
 #define RGB(r, g, b) ((R(r) + G(g) + B(b)) & CMASK)
 
+class runner;
+
 class graphics : graphics_base
 {
 private:
 	Display *_display {NULL};
+	GC _gc {NULL};
+	Visual *_visual {NULL};
 	Window _window;
 	Window _root;
-	GC _gc;
-	uint32_t _screen;
-	const uint32_t _width;
-	const uint32_t _height;
-	const char* _name;
-	bool _is_running {false};
+	int _screen;
+	Colormap _cmap;
+	const int _width;
+	const int _height;
+	const char *_name;
 
-	void start();
-	bool get_event(XEvent &event);
-	void handle_event(XEvent &event);
-	void draw();
+	void init_graphics();
 
 public:
-
-	enum colors
-	{
-		black		= RGB(MINC, MINC, MINC),
-		white		= RGB(MAXC, MAXC, MAXC),
-		grey		= RGB(MIDC, MIDC, MIDC),
-		dark_grey	= RGB(LOWC, LOWC, LOWC),
-
-		bright_red	= RGB(MAXC, MINC, MINC),
-		red			= RGB(MIDC, MINC, MINC),
-		dark_red	= RGB(LOWC, MINC, MINC),
-
-		bright_green = RGB(MINC, MAXC, MINC),
-		green		 = RGB(MINC, MIDC, MINC),
-		dark_green	 = RGB(MINC, LOWC, MINC),
-
-		bright_blue	 = RGB(MINC, MINC, MAXC),
-		blue		 = RGB(MINC, MINC, MIDC),
-		dark_blue	 = RGB(MINC, MINC, LOWC),
-	};
-
 	graphics();
 	graphics(const char*);
-	graphics(uint32_t, uint32_t);
-	graphics(uint32_t, uint32_t, const char*);
+	graphics(int, int);
+	graphics(int, int, const char*);
 	~graphics();
-	void run();
+	void draw_something();
+	void refresh();
+	friend bool runner::get_event(graphics&, XEvent&);
+	friend void runner::handle_event(graphics&, XEvent&, bool&);
 };
 
-} // namespace graphics_ns_x11
+//} // namespace graphics_ns_x11
 
-} // namespace graphics_ns_base
+//} // namespace graphics_ns_base
+
+#endif // __GRAPHICS_X11_H__

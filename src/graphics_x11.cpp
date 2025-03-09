@@ -1,82 +1,19 @@
 #include <stdexcept>
 #include <iostream>
 #include <iomanip>
-#include <X11/Xutil.h>
 #include <graphics_x11.h>
 
-namespace graphics_ns_base {
+// namespace graphics_ns_base {
 
-namespace graphics_ns_x11 {
+// namespace graphics_ns_x11 {
 
-const uint32_t DEFAULT_WIDTH  = 800;
-const uint32_t DEFAULT_HEIGHT = 600;
+#define HEX(n, w) "0x" << std::hex << std::setw((w)) << std::setfill('0') << (n)
+
+const int DEFAULT_WIDTH  = 800;
+const int DEFAULT_HEIGHT = 600;
 const char* DEFAULT_NAME = "Display_X11";
-#define HEX(n, w) " 0x" << std::hex << std::setw((w)) << std::setfill('0') << (n)
 
-graphics::graphics() : _width{DEFAULT_WIDTH},
-		       _height{DEFAULT_HEIGHT},
-		       _name{DEFAULT_NAME}
-{
-	try {
-		start();
-	}
-	catch (const std::exception& e) {
-		throw;
-	}
-};
-
-graphics::graphics(const char* s) :
-	_width{DEFAULT_WIDTH},
-	_height{DEFAULT_HEIGHT},
-	_name{s}
-{
-	try {
-		start();
-	}
-	catch (const std::exception& e) {
-		throw;
-	}
-};
-
-graphics::graphics(uint32_t w, uint32_t h) :
-	_width{w},
-	_height{h},
-	_name{DEFAULT_NAME}
-{
-	try {
-		start();
-	}
-	catch (const std::exception& e) {
-		throw;
-	}
-};
-
-graphics::graphics(uint32_t w, uint32_t h, const char *s) :
-	_width{w},
-	_height{h},
-	_name{s}
-{
-	try {
-		start();
-	}
-	catch (const std::exception& e) {
-		throw;
-	}
-};
-
-graphics::~graphics() {
-	if (_display) {
-		XCloseDisplay(_display);
-	}
-
-	if (_gc) {
-		XFreeGC(_display, _gc);
-	}
-
-	XDestroyWindow(_display, _window);
-};
-
-void graphics::start()
+void graphics::init_graphics()
 {
 	int rc;
 
@@ -86,8 +23,13 @@ void graphics::start()
 	}
 
 	_screen = DefaultScreen(_display);
+	_visual = DefaultVisualOfScreen(ScreenOfDisplay(_display, _screen));
 	_root = RootWindow(_display, _screen);
-	_window = XCreateSimpleWindow(_display, _root, 0, 0, _width, _height, 1, colors::dark_grey, colors::black);
+	_cmap = DefaultColormap(_display, _screen);
+
+	_window = XCreateSimpleWindow(_display, _root, 0, 0, _width, _height, 1,
+								  WhitePixel(_display, _screen),
+								  BlackPixel(_display, _screen));
 	if (!_window) {
 		throw std::runtime_error("Unable to create window");
 	}
@@ -107,12 +49,12 @@ void graphics::start()
 		throw std::runtime_error("Unable to select input");
 	}
 
-	rc = XSetBackground(_display, _gc, colors::black);
+	rc = XSetBackground(_display, _gc, BlackPixel(_display, _screen));
 	if (!rc) {
 		throw std::runtime_error("Unable to set background");
 	}
 
-	rc = XSetForeground(_display, _gc, colors::dark_grey);
+	rc = XSetForeground(_display, _gc, WhitePixel(_display, _screen));
 	if (!rc) {
 		throw std::runtime_error("Unable to set forground");
 	}
@@ -126,126 +68,82 @@ void graphics::start()
 	if (!rc) {
 		throw std::runtime_error("Unable to map window");
 	}
-
-	_is_running = true;
 };
 
-bool graphics::get_event(XEvent& event)
+graphics::graphics() :
+				_width{DEFAULT_WIDTH},
+		       _height{DEFAULT_HEIGHT},
+		       _name{DEFAULT_NAME}
 {
-	if (XPending(_display)) {
-		XNextEvent(_display, &event);
-		return true;
+	try {
+		init_graphics();
 	}
-
-	return false;
-};
-
-void graphics::handle_event(XEvent& event) {
-	switch (event.type) {
-	case Expose:
-		if (event.xexpose.count == 0) {
-			draw();
-		}
-		break;
-	case KeyPress:
-	case ButtonPress:
-		_is_running = false;
-		break;
+	catch (const std::exception& e) {
+		throw;
 	}
 };
 
-void graphics::draw() {
-	int x = 1, y = 1;
-
-	XSetForeground(_display, _gc, colors::white);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::grey);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::dark_grey);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::black);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x = 1;
-	y += 50;
-
-	XSetForeground(_display, _gc, colors::bright_red);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::red);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::dark_red);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::black);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x = 1;
-	y += 50;
-
-	XSetForeground(_display, _gc, colors::bright_green);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::green);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::dark_green);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::black);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x = 1;
-	y += 50;
-
-	XSetForeground(_display, _gc, colors::bright_blue);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::blue);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::dark_blue);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XSetForeground(_display, _gc, colors::black);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x = 1;
-	y += 50;
-
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-	x += 50;
-
-	XFillRectangle(_display, _window, _gc, x, y, x+50, y+50);
-};
-
-void graphics::run()
+graphics::graphics(const char* s) :
+	_width{DEFAULT_WIDTH},
+	_height{DEFAULT_HEIGHT},
+	_name{s}
 {
-	XEvent event;
-
-	while (_is_running) {
-		if (get_event(event)) {
-			handle_event(event);
-		}
+	try {
+		init_graphics();
+	}
+	catch (const std::exception& e) {
+		throw;
 	}
 };
 
-} // namespace graphics_ns_x11
+graphics::graphics(int w, int h) :
+	_width{w},
+	_height{h},
+	_name{DEFAULT_NAME}
+{
+	try {
+		init_graphics();
+	}
+	catch (const std::exception& e) {
+		throw;
+	}
+};
 
-} // namespace graphics_ns_base
+graphics::graphics(int w, int h, const char *s) :
+	_width{w},
+	_height{h},
+	_name{s}
+{
+	try {
+		init_graphics();
+	}
+	catch (const std::exception& e) {
+		throw;
+	}
+};
+
+graphics::~graphics()
+{
+	if (_display) {
+		XCloseDisplay(_display);
+	}
+
+	if (_gc) {
+		XFreeGC(_display, _gc);
+	}
+
+	XDestroyWindow(_display, _window);
+};
+
+void graphics::refresh()
+{
+};
+
+void graphics::draw_something()
+{
+
+};
+
+// } // namespace graphics_ns_x11
+
+// } // namespace graphics_ns_base

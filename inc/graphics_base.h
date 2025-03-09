@@ -1,12 +1,15 @@
-namespace graphics_ns_base {
+#ifndef __GRAPHICS_BASE_H__
+#define __GRAPHICS_BASE_H__
+
+//namespace graphics_ns_base {
 
 class graphics_base {
 private:
-	virtual void start() = 0;
-	virtual void draw() = 0;
-
+	virtual void init_graphics() = 0;
 public:
-	virtual void run() = 0;
+	virtual void refresh() = 0;
 };
 
-} // namespace graphics_ns_base
+//} // namespace graphics_ns_base
+
+#endif // __GRAPHICS_BASE_H__
