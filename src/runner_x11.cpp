@@ -1,43 +1,48 @@
 #include <chrono>
 #include <thread>
 #include <runner_x11.h>
-#include <graphics_x11.h>
 
-// namespace runner_ns_base {
+namespace runner_ns_x11 {
 
-// namespace runner_ns_x11 {
-
-bool runner::get_event(graphics& g, XEvent& event)
+bool runner::get_event(XEvent& event) const
 {
-	if (XPending(g._display)) {
-		XNextEvent(g._display, &event);
+	if (XPending((Display*)_g->get_display())) {
+		XNextEvent((Display*)_g->get_display(), &event);
 		return true;
 	}
 
 	return false;
 };
 
-void runner::handle_event(graphics& g, XEvent& event, bool &flag) {
+bool runner::handle_event(XEvent& event) const
+{
 	switch (event.type) {
 	case Expose:
 		if (event.xexpose.count == 0) {
-			g.refresh();
+			_g->refresh();
 		}
 		break;
 	case KeyPress:
 	case ButtonPress:
-		flag = false;
-		break;
+		return false;
 	}
+
+	return true;
 };
 
-void runner::run(graphics& g)
+runner::runner(graphics& g) :
+	_g {&g},
+	_is_running {true}
+{
+};
+
+void runner::run()
 {
 	XEvent event;
 
 	while (_is_running) {
-		if (get_event(g, event)) {
-			handle_event(g, event, _is_running);
+		if (get_event(event)) {
+			_is_running = handle_event(event);
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -45,8 +50,4 @@ void runner::run(graphics& g)
 };
 
 
-// };
-
-// } // namespace runner_ns_x11
-
-// } // namespace runner_ns_base
+} // namespace runner_ns_x11

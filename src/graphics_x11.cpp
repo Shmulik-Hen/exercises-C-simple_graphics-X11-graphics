@@ -3,9 +3,9 @@
 #include <iomanip>
 #include <graphics_x11.h>
 
-// namespace graphics_ns_base {
+namespace graphics_ns_base {
 
-// namespace graphics_ns_x11 {
+namespace graphics_ns_x11 {
 
 #define HEX(n, w) "0x" << std::hex << std::setw((w)) << std::setfill('0') << (n)
 
@@ -135,15 +135,14 @@ graphics::~graphics()
 	XDestroyWindow(_display, _window);
 };
 
-void graphics::refresh()
+void graphics::refresh() const
 {
 };
 
-void graphics::draw_something()
+void graphics::draw_something() const
 {
-
 };
 
-// } // namespace graphics_ns_x11
+} // namespace graphics_ns_x11
 
-// } // namespace graphics_ns_base
+} // namespace graphics_ns_base
