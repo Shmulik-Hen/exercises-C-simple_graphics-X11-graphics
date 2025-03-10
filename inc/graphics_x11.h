@@ -1,6 +1,8 @@
 #ifndef __GRAPHICS_X11_H__
 #define __GRAPHICS_X11_H__
 
+#include <map>
+#include <string>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <graphics_base.h>
@@ -9,40 +11,13 @@ namespace graphics_ns_base {
 
 namespace graphics_ns_x11 {
 
-#define CMASK 0x00FFFFFF
-#define MAXC  0xFF
-#define MIDC  0x7F
-#define LOWC  0x3F
-#define MINC  0x00
-
-#define R(x) (((x) & MAXC) << 16)
-#define G(x) (((x) & MAXC) << 8)
-#define B(x) ((x) & MAXC)
-#define RGB(r, g, b) ((R(r) + G(g) + B(b)) & CMASK)
-
 class graphics : graphics_base
 {
-private:
-
-	Display *_display {NULL};
-	GC _gc {NULL};
-	Visual *_visual {NULL};
-	Window _window;
-	Window _root;
-	int _screen;
-	Colormap _cmap;
-	const int _width;
-	const int _height;
-	const char *_name;
-
-	void init_graphics();
-
 public:
 
-	enum color_idx
+	typedef enum
 	{
-		__first__idx = 0,
-		white = __first__idx,
+		white = 0,
 		grey,
 		dark_grey,
 		black,
@@ -70,15 +45,43 @@ public:
 		bright_purple,
 		purple,
 		dark_purple,
+	} color_idx_e;
 
-		__last__idx,
-	};
+private:
+
+	Display *_display {NULL};
+	GC _gc {NULL};
+	Visual *_visual {NULL};
+	Window _window;
+	Window _root;
+	int _screen;
+	Colormap _cmap;
+	const int _width;
+	const int _height;
+	const char *_name;
+
+	void init_graphics();
+	void init_colors();
+
+	typedef struct {
+		std::string name;
+		unsigned long val;
+	} color_data_t;
+
+	typedef std::map<color_idx_e, color_data_t> color_t;
+	color_t *_colors;
+
+public:
 
 	graphics();
 	graphics(const char*);
 	graphics(int, int);
 	graphics(int, int, const char*);
 	~graphics();
+
+	unsigned long get_color_val(color_idx_e) const;
+	std::string get_color_name(color_idx_e) const;
+	void draw_rect(int, int, int, int, color_idx_e) const;
 	void draw_something() const;
 	void refresh() const;
 	const Display* get_display() const {return _display;};

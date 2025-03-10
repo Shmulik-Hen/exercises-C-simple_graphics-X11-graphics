@@ -11,7 +11,6 @@ int main()
 	try {
 		graphics g;
 		runner r(g);
-		g.draw_something();
 		r.run();
 	}
 	catch (const std::exception& e) {

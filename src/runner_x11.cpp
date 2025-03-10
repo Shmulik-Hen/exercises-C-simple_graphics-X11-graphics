@@ -1,5 +1,6 @@
 #include <chrono>
 #include <thread>
+#include <iostream>
 #include <runner_x11.h>
 
 namespace runner_ns_x11 {
@@ -18,16 +19,21 @@ bool runner::handle_event(XEvent& event) const
 {
 	switch (event.type) {
 	case Expose:
+		std::cout << "Got expose event" << std::endl;
 		if (event.xexpose.count == 0) {
-			_g->refresh();
+			_g->draw_something();
 		}
-		break;
+		return true;
 	case KeyPress:
+		std::cout << "Got key press event" << std::endl;
+		return false;
 	case ButtonPress:
+		std::cout << "Got button press event" << std::endl;
+		return false;
+	default:
+		std::cout << "Got unsupported event" << std::endl;
 		return false;
 	}
-
-	return true;
 };
 
 runner::runner(graphics& g) :
