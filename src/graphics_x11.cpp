@@ -188,28 +188,43 @@ graphics::~graphics()
 
 void graphics::refresh() const
 {
+	XEvent ev;
+	Window root;
+	unsigned int border_width, depth;
+
+	XGetGeometry(_display, _window, &root,
+				 &ev.xexpose.x, &ev.xexpose.y,
+				 (unsigned int*)&ev.xexpose.width,
+				 (unsigned int*)&ev.xexpose.height,
+				 &border_width, &depth);
+
+	ev.xexpose.type = Expose;
+	ev.xexpose.display = _display;
+	ev.xexpose.window = _window;
+	ev.xexpose.count = 0;
+
+	XClearWindow(_display, _window);
+	XSendEvent(_display, _window, false, ExposureMask, &ev);
 };
 
 unsigned long graphics::get_color_val(color_idx_e i) const
 {
-	color_t::iterator it = _colors->find(i);
-	return it->second.val;
+	return _colors->find(i)->second.val;
 };
 
 std::string graphics::get_color_name(color_idx_e i) const
 {
-	color_t::iterator it = _colors->find(i);
-	return it->second.name;
+	return _colors->find(i)->second.name;
 };
 
 void graphics::draw_rect(int x, int y, int w, int h, color_idx_e i) const
 {
-	std::cout << STR("Drawing a rectangle from: ", 1)
-		<< DEC(x, 3) << DEC(y, 3)
-		<< STR(" to: ", 1) << DEC(x+w, 3) << DEC(y+h, 3)
-		<< STR(" color index: ", 1) << DEC(i, 3)
-		<< STR(" color name: ", 1) << STR(get_color_name(i), 20)
-		<< STR(" color val: ", 1) << HEX(get_color_val(i), 8) << std::endl;
+	std::cout << STR("Drawing a rectangle from: [", 1)
+		<< DEC(x, 3) << STR(",", 1) << DEC(y, 1) << STR("]", 1)
+		<< STR(", to: [", 1) << DEC(x+w, 3) << STR(",", 1)<< DEC(y+h, 1) << STR("]", 1)
+		<< STR(", color index: ", 1) << DEC(i, 3)
+		<< STR(", color name: ", 1) << STR(get_color_name(i), 20)
+		<< STR(", color val: ", 1) << HEX(get_color_val(i), 8) << std::endl;
 	XSetForeground(_display, _gc, get_color_val(i));
 	XFillRectangle(_display, _window, _gc, x, y, w, h);
 };

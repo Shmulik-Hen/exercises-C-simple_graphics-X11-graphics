@@ -5,6 +5,9 @@
 
 namespace runner_ns_x11 {
 
+#define KEY_ESCAPE     9
+#define KEY_SPACEBAR  65
+
 bool runner::get_event(XEvent& event) const
 {
 	if (XPending((Display*)_g->get_display())) {
@@ -17,23 +20,38 @@ bool runner::get_event(XEvent& event) const
 
 bool runner::handle_event(XEvent& event) const
 {
+	bool ret = true;
+
 	switch (event.type) {
 	case Expose:
 		std::cout << "Got expose event" << std::endl;
 		if (event.xexpose.count == 0) {
 			_g->draw_something();
 		}
-		return true;
+		break;
 	case KeyPress:
 		std::cout << "Got key press event" << std::endl;
-		return false;
+
+		switch (event.xkey.keycode) {
+		case KEY_SPACEBAR:
+			std::cout << "Got space key" << std::endl;
+			_g->refresh();
+			break;
+		case KEY_ESCAPE:
+			std::cout << "Got escape key" << std::endl;
+			ret = false;
+		}
+		break;
 	case ButtonPress:
 		std::cout << "Got button press event" << std::endl;
-		return false;
+		break;
 	default:
 		std::cout << "Got unsupported event" << std::endl;
-		return false;
+		ret = false;
+		break;
 	}
+
+	return ret;
 };
 
 runner::runner(graphics& g) :
@@ -54,6 +72,5 @@ void runner::run()
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 };
-
 
 } // namespace runner_ns_x11
