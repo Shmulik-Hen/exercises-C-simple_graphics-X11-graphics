@@ -24,29 +24,29 @@ bool runner::handle_event(XEvent& event) const
 
 	switch (event.type) {
 	case Expose:
-		std::cout << "Got expose event" << std::endl;
+		DBG("Got expose event");
 		if (event.xexpose.count == 0) {
 			_g->draw_something();
 		}
 		break;
 	case KeyPress:
-		std::cout << "Got key press event" << std::endl;
+		DBG("Got key press event");
 
 		switch (event.xkey.keycode) {
 		case KEY_SPACEBAR:
-			std::cout << "Got space key" << std::endl;
+			DBG("Got space key");
 			_g->refresh();
 			break;
 		case KEY_ESCAPE:
-			std::cout << "Got escape key" << std::endl;
+			DBG("Got escape key");
 			ret = false;
 		}
 		break;
 	case ButtonPress:
-		std::cout << "Got button press event" << std::endl;
+		DBG("Got button press event");
 		break;
 	default:
-		std::cout << "Got unsupported event" << std::endl;
+		DBG("Got unsupported event");
 		ret = false;
 		break;
 	}

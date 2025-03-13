@@ -20,13 +20,17 @@ namespace graphics_ns_x11 {
 #define LOWC  0x3F
 #define MINC  0x00
 
-#define HEX(n, w) "0x" << std::hex << std::setw((w)) << std::setfill('0') << std::right << (n)
-#define DEC(n, w) std::dec << std::setw((w)) << std::setfill(' ') << std::right << (n)
-#define STR(s, w) std::setw((w)) << std::left << (s)
+enum
+{
+	BOUNDS_OK   	= 0x00000000,
+	BOUNDS_X_OUT    = 0x00000001,
+	BOUNDS_Y_OUT    = 0x00000010,
+	BOUNDS_BOTH_OUT	= (BOUNDS_X_OUT | BOUNDS_Y_OUT)
+};
 
 const int DEFAULT_WIDTH  = 800;
 const int DEFAULT_HEIGHT = 600;
-const char* DEFAULT_NAME = "Display_X11";
+const char* DEFAULT_NAME = "Graphics_X11";
 
 void graphics::init_colors()
 {
@@ -79,8 +83,7 @@ void graphics::init_graphics()
 	_cmap = DefaultColormap(_display, _screen);
 
 	_window = XCreateSimpleWindow(_display, _root, 0, 0, _width, _height, 1,
-								  get_color_val(white),
-								  get_color_val(black));
+								  get_color_val(_fg), get_color_val(_bg));
 	if (!_window) {
 		throw std::runtime_error("Unable to create window");
 	}
@@ -100,12 +103,12 @@ void graphics::init_graphics()
 		throw std::runtime_error("Unable to select input");
 	}
 
-	rc = XSetBackground(_display, _gc, get_color_val(black));
+	rc = XSetBackground(_display, _gc, _bg);
 	if (!rc) {
 		throw std::runtime_error("Unable to set background");
 	}
 
-	rc = XSetForeground(_display, _gc, get_color_val(white));
+	rc = XSetForeground(_display, _gc, _fg);
 	if (!rc) {
 		throw std::runtime_error("Unable to set forground");
 	}
@@ -119,6 +122,19 @@ void graphics::init_graphics()
 	if (!rc) {
 		throw std::runtime_error("Unable to map window");
 	}
+};
+
+int graphics::in_bounds(dot p) const
+{
+	int rc = BOUNDS_OK;
+
+	if (p.x < 0 || p.x >= _width)
+		rc |= BOUNDS_X_OUT;
+
+	if (p.y < 0 || p.y >= _height)
+		rc |= BOUNDS_Y_OUT;
+
+	return rc;
 };
 
 graphics::graphics() :
@@ -217,26 +233,118 @@ std::string graphics::get_color_name(color_idx_e i) const
 	return _colors->find(i)->second.name;
 };
 
-void graphics::draw_rect(int x, int y, int w, int h, color_idx_e i) const
+void graphics::draw_rect(dot tl, dot br, color_idx_e i) const
 {
-	std::cout << STR("Drawing a rectangle from: [", 1)
-		<< DEC(x, 3) << STR(",", 1) << DEC(y, 1) << STR("]", 1)
-		<< STR(", to: [", 1) << DEC(x+w, 3) << STR(",", 1)<< DEC(y+h, 1) << STR("]", 1)
-		<< STR(", color index: ", 1) << DEC(i, 3)
-		<< STR(", color name: ", 1) << STR(get_color_name(i), 20)
-		<< STR(", color val: ", 1) << HEX(get_color_val(i), 8) << std::endl;
+#ifdef DEBUG_MODE
+	std::string s = get_color_name(i) + SEP;
+	int len = std::max((int)s.length(), 15);
+
+	std::cout << RECT_PFX
+		<< DEC(i, 2) << SEP << STR(s, len)
+		<< DEC(tl.x, 4) << SEP << DEC(tl.y, 4) << SEP
+		<< DEC(br.x, 4) << SEP << DEC(br.y, 4) << SEP
+		<< HEX(get_color_val(i), 8) << std::endl;
+#endif //DEBUG_MODE
+
+	if (in_bounds(tl) != BOUNDS_OK || in_bounds(br) != BOUNDS_OK) {
+		DBG("Out of bounds");
+		return;
+	}
+
 	XSetForeground(_display, _gc, get_color_val(i));
-	XFillRectangle(_display, _window, _gc, x, y, w, h);
+	XFillRectangle(_display, _window, _gc, tl.x, tl.y, br.x, br.y);
+};
+
+void graphics::draw_text(dot p, std::string s, color_idx_e i) const
+{
+#ifdef DEBUG_MODE
+	std::string s2 = get_color_name(i) + SEP;
+	int len = std::max((int)s2.length(), 15);
+
+	std::cout << TEXT_PFX
+		<< DEC(i, 2) << SEP << STR(s2, len)
+		<< DEC(p.x, 4) << SEP << DEC(p.y, 4) << SEP
+		<< HEX(get_color_val(i), 8) << std::endl;
+#endif //DEBUG_MODE
+
+	if (in_bounds(p) != BOUNDS_OK) {
+		DBG("Out of bounds");
+		return;
+	}
+
+	XTextItem txt{(char*)s.c_str(), (int)s.length(), 1, None};
+	XSetForeground(_display, _gc, get_color_val(i));
+	XDrawText(_display, _window, _gc, p.x, p.y, &txt, 1);
 };
 
 void graphics::draw_something() const
 {
 	color_t::iterator it;
-	int x = 0, y = 0;
+	int x = 0, y = 0, gap = 50, rc;
+	dot tl, br, p;
 
-	for (it = _colors->begin(); it != _colors->end(); x+=20, it++) {
-		draw_rect(x, y, 20, 20, it->first);
+	for (it = _colors->begin(); it != _colors->end(); x+=gap, it++) {
+		std::string s = std::to_string(it->first);
+		color_idx_e c = white;
+
+		if (it->first == white || it->first == bright_yellow)
+			c = black;
+
+		tl = {x, y};
+		br = {x+gap, y+gap};
+
+		rc = in_bounds(br);
+		if (it->first && ((it->first %10) == 0)) {
+			rc = BOUNDS_X_OUT;
+		}
+
+		switch (rc)
+		{
+		case BOUNDS_OK:
+			DBG("BOUNDS_OK");
+			p = {x + 10, y + 10};
+			draw_rect(tl, br, it->first);
+			draw_text(p, s, c);
+			break;
+		case BOUNDS_X_OUT:
+			DBG("BOUNDS_X_OUT");
+
+			// blank to the end of the row
+			p = {_width-1, y+gap};
+			draw_rect(tl, p, _bg);
+
+			// start in a new row
+			y += gap;
+			x = 0;
+			tl = {x, y};
+			br = {x+gap, y+gap};
+			p = {x + 10, y + 10};
+			draw_rect(tl, br, it->first);
+			draw_text(p, s, c);
+			break;
+		case BOUNDS_Y_OUT:
+			DBG("BOUNDS_Y_OUT");
+			return;
+		case BOUNDS_BOTH_OUT:
+			DBG("BOUNDS_BOTH_OUT");
+			return;
+		default:
+			DBG("BOUNDS_BOTH_OUT");
+			return;
+		}
 	}
+
+	// blank to the end of the row
+	tl = {x, y};
+	br = {_width-1, y+gap};
+	draw_rect(tl, br, _bg);
+
+	// blank from after last row to the bottom
+	y += gap;
+	x = 0;
+	tl = {x, y};
+	br = {_width-1, _height-1};
+	draw_rect(tl, br, _bg);
 };
 
 } // namespace graphics_ns_x11
