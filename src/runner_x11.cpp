@@ -26,7 +26,7 @@ bool runner::handle_event(XEvent& event) const
 	case Expose:
 		DBG("Got expose event");
 		if (event.xexpose.count == 0) {
-			_g->draw_something();
+			_g->demo();
 		}
 		break;
 	case KeyPress:

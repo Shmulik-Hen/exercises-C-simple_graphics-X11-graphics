@@ -15,30 +15,24 @@ namespace graphics_ns_x11 {
 #define B(x) ((x) & CMASK)
 #define RGB(r, g, b) ((R(r) + G(g) + B(b)) & GMASK)
 
-#define MAXC  0xFF
-#define MIDC  0x7F
-#define LOWC  0x3F
-#define MINC  0x00
-
-enum
-{
-	BOUNDS_OK   	= 0x00000000,
-	BOUNDS_X_OUT    = 0x00000001,
-	BOUNDS_Y_OUT    = 0x00000010,
-	BOUNDS_BOTH_OUT	= (BOUNDS_X_OUT | BOUNDS_Y_OUT)
-};
+#define MAXC 0xFF
+#define MIDC 0x7F
+#define LOWC 0x3F
+#define MINC 0x00
 
 const int DEFAULT_WIDTH  = 800;
 const int DEFAULT_HEIGHT = 600;
 const char* DEFAULT_NAME = "Graphics_X11";
 
+using namespace graphics_ns_base;
+
 void graphics::init_colors()
 {
 	_colors = new color_t {
+		{black,			{"black",			RGB(MINC, MINC, MINC)}},
 		{white,			{"white",			RGB(MAXC, MAXC, MAXC)}},
 		{grey,			{"grey",			RGB(MIDC, MIDC, MIDC)}},
 		{dark_grey,		{"dark_grey",		RGB(LOWC, LOWC, LOWC)}},
-		{black,			{"black",			RGB(MINC, MINC, MINC)}},
 
 		{bright_red,	{"bright_red",		RGB(MAXC, MINC, MINC)}},
 		{red,			{"red",				RGB(MIDC, MINC, MINC)}},
@@ -124,7 +118,7 @@ void graphics::init_graphics()
 	}
 };
 
-int graphics::in_bounds(dot p) const
+graphics_base::bounds_status graphics::in_bounds(dot p) const
 {
 	int rc = BOUNDS_OK;
 
@@ -134,7 +128,7 @@ int graphics::in_bounds(dot p) const
 	if (p.y < 0 || p.y >= _height)
 		rc |= BOUNDS_Y_OUT;
 
-	return rc;
+	return (graphics_base::bounds_status)rc;
 };
 
 graphics::graphics() :
@@ -200,6 +194,10 @@ graphics::~graphics()
 	}
 
 	XDestroyWindow(_display, _window);
+
+	if (_colors) {
+		delete _colors;
+	}
 };
 
 void graphics::refresh() const
@@ -223,17 +221,17 @@ void graphics::refresh() const
 	XSendEvent(_display, _window, false, ExposureMask, &ev);
 };
 
-unsigned long graphics::get_color_val(color_idx_e i) const
+unsigned long graphics::get_color_val(color_idx i) const
 {
 	return _colors->find(i)->second.val;
 };
 
-std::string graphics::get_color_name(color_idx_e i) const
+std::string graphics::get_color_name(color_idx i) const
 {
 	return _colors->find(i)->second.name;
 };
 
-void graphics::draw_rect(dot tl, dot br, color_idx_e i) const
+void graphics::draw_rect(dot tl, dot br, color_idx i) const
 {
 #ifdef DEBUG_MODE
 	std::string s = get_color_name(i) + SEP;
@@ -255,7 +253,7 @@ void graphics::draw_rect(dot tl, dot br, color_idx_e i) const
 	XFillRectangle(_display, _window, _gc, tl.x, tl.y, br.x, br.y);
 };
 
-void graphics::draw_text(dot p, std::string s, color_idx_e i) const
+void graphics::draw_text(dot p, std::string s, color_idx i) const
 {
 #ifdef DEBUG_MODE
 	std::string s2 = get_color_name(i) + SEP;
@@ -277,7 +275,7 @@ void graphics::draw_text(dot p, std::string s, color_idx_e i) const
 	XDrawText(_display, _window, _gc, p.x, p.y, &txt, 1);
 };
 
-void graphics::draw_something() const
+void graphics::demo() const
 {
 	color_t::iterator it;
 	int x = 0, y = 0, gap = 50, rc;
@@ -285,16 +283,15 @@ void graphics::draw_something() const
 
 	for (it = _colors->begin(); it != _colors->end(); x+=gap, it++) {
 		std::string s = std::to_string(it->first);
-		color_idx_e c = white;
+		color_idx c = white;
 
 		if (it->first == white || it->first == bright_yellow)
 			c = black;
 
 		tl = {x, y};
 		br = {x+gap, y+gap};
-
 		rc = in_bounds(br);
-		if (it->first && ((it->first %10) == 0)) {
+		if (it->first && ((it->first%10) == 0)) {
 			rc = BOUNDS_X_OUT;
 		}
 
@@ -308,8 +305,7 @@ void graphics::draw_something() const
 			break;
 		case BOUNDS_X_OUT:
 			DBG("BOUNDS_X_OUT");
-
-			// blank to the end of the row
+			// blank to the end of the row - why? what's wrong with X11?
 			p = {_width-1, y+gap};
 			draw_rect(tl, p, _bg);
 
@@ -334,12 +330,12 @@ void graphics::draw_something() const
 		}
 	}
 
-	// blank to the end of the row
+	// blank from next square to the end of the row - again, why?
 	tl = {x, y};
 	br = {_width-1, y+gap};
 	draw_rect(tl, br, _bg);
 
-	// blank from after last row to the bottom
+	// blank from next row to the bottom
 	y += gap;
 	x = 0;
 	tl = {x, y};
