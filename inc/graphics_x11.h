@@ -64,15 +64,17 @@ public:
 	~graphics();
 
 	// implement pure virtuals
-	inline const bounds_status is_in_bounds(dot) const;
+	inline const bounds_status is_in_bounds(point) const;
 	inline const bool is_valid_color(color_idx) const;
 	inline const int get_num_colors() const {return __last_color__;};
+	inline const int get_width() const {return _width;};
+	inline const int get_height() const {return _height;};
 	inline const unsigned long get_color_val(color_idx) const;
 	inline const std::string get_color_name(color_idx) const;
-	void draw_pixel(dot, color_idx) const;
-	void draw_line(dot, dot, color_idx) const;
-	void draw_rect(dot, dot, color_idx, bool) const;
-	void draw_text(dot, std::string, color_idx) const;
+	void draw_pixel(point, color_idx) const;
+	void draw_line(point, point, color_idx) const;
+	void draw_rect(point, size, color_idx, bool) const;
+	void draw_text(point, std::string, color_idx) const;
 	void refresh() const;
 
 	inline const Display* get_display() const {return _display;};

@@ -59,22 +59,29 @@ public:
 	typedef struct {
 		int x;
 		int y;
-	} dot;
+	} point;
+
+	typedef struct {
+		int width;
+		int height;
+	} size;
 
 	typedef struct {
 		std::string name;
 		unsigned long val;
 	} color_data_t;
 
-	virtual inline const bounds_status is_in_bounds(dot) const = 0;
+	virtual inline const bounds_status is_in_bounds(point) const = 0;
 	virtual inline const bool is_valid_color(color_idx) const = 0;
 	virtual inline const int get_num_colors() const = 0;
+	virtual inline const int get_width() const = 0;
+	virtual inline const int get_height() const = 0;
 	virtual inline const unsigned long get_color_val(color_idx) const = 0;
 	virtual inline const std::string get_color_name(color_idx) const = 0;
-	virtual void draw_pixel(dot, color_idx) const = 0;
-	virtual void draw_line(dot, dot, color_idx) const = 0;
-	virtual void draw_rect(dot, dot, color_idx, bool) const = 0;
-	virtual void draw_text(dot, std::string, color_idx) const = 0;
+	virtual void draw_pixel(point, color_idx) const = 0;
+	virtual void draw_line(point, point, color_idx) const = 0;
+	virtual void draw_rect(point, size, color_idx, bool) const = 0;
+	virtual void draw_text(point, std::string, color_idx) const = 0;
 	virtual void refresh() const = 0;
 };
 

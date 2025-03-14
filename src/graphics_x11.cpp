@@ -5,8 +5,8 @@ namespace graphics_ns_base {
 
 namespace graphics_ns_x11 {
 
-const int DEFAULT_WIDTH  = 320;
-const int DEFAULT_HEIGHT = 240;
+const int DEFAULT_WIDTH  = 800;
+const int DEFAULT_HEIGHT = 600;
 const char* DEFAULT_NAME = "Graphics_X11";
 
 #define GMASK 0x00FFFFFF
@@ -196,7 +196,7 @@ graphics::~graphics()
 	}
 };
 
-inline const graphics_base::bounds_status graphics::is_in_bounds(dot p) const
+inline const graphics_base::bounds_status graphics::is_in_bounds(point p) const
 {
 	int rc = BOUNDS_OK;
 
@@ -229,7 +229,7 @@ inline const std::string graphics::get_color_name(color_idx i) const
 	return _colors->find(i)->second.name;
 };
 
-void graphics::draw_pixel(dot p, color_idx i) const
+void graphics::draw_pixel(point p, color_idx i) const
 {
 #ifdef DEBUG_GRFX
 	std::string s = get_color_name(i) + SEP;
@@ -250,7 +250,7 @@ void graphics::draw_pixel(dot p, color_idx i) const
 	XDrawPoint(_display, _window, _gc, p.x, p.y);
 };
 
-void graphics::draw_line(dot tl, dot br, color_idx i) const
+void graphics::draw_line(point tl, point br, color_idx i) const
 {
 #ifdef DEBUG_GRFX
 	std::string s = get_color_name(i) + SEP;
@@ -272,7 +272,7 @@ void graphics::draw_line(dot tl, dot br, color_idx i) const
 	XDrawLine(_display, _window, _gc, tl.x, tl.y, br.x, br.y);
 };
 
-void graphics::draw_rect(dot tl, dot sz, color_idx i, bool fill) const
+void graphics::draw_rect(point tl, size sz, color_idx i, bool fill) const
 {
 #ifdef DEBUG_GRFX
 	std::string s = get_color_name(i) + SEP;
@@ -285,21 +285,21 @@ void graphics::draw_rect(dot tl, dot sz, color_idx i, bool fill) const
 		<< HEX(get_color_val(i), 8) << std::endl;
 #endif //DEBUG_GRFX
 
-	if (is_in_bounds(tl) != BOUNDS_OK || is_in_bounds({sz.x+tl.x, sz.y+tl.y}) != BOUNDS_OK) {
+	if (is_in_bounds(tl) != BOUNDS_OK || is_in_bounds({tl.x+sz.width, tl.y+sz.height}) != BOUNDS_OK) {
 		WARN("Out of bounds");
 		return;
 	}
 
 	XSetForeground(_display, _gc, get_color_val(i));
 	if (fill) {
-		XFillRectangle(_display, _window, _gc, tl.x, tl.y, sz.x, sz.y);
+		XFillRectangle(_display, _window, _gc, tl.x, tl.y, sz.width, sz.height);
 	}
 	else {
-		XDrawRectangle(_display, _window, _gc, tl.x, tl.y, sz.x, sz.y);
+		XDrawRectangle(_display, _window, _gc, tl.x, tl.y, sz.width, sz.height);
 	}
 };
 
-void graphics::draw_text(dot p, std::string s, color_idx i) const
+void graphics::draw_text(point p, std::string s, color_idx i) const
 {
 #ifdef DEBUG_GRFX
 	std::string s2 = get_color_name(i) + SEP;
@@ -346,7 +346,8 @@ void graphics::demo() const
 {
 	color_t::iterator it;
 	int x = 0, y = 0, gap = 50, rc;
-	dot tl, br, sz, p;
+	point tl, br, p;
+	size sz;
 
 #ifdef DEBUG_GRFX
 	std::cout << DBG_PFX << STR("Number of colors: ", 1) << DEC(get_num_colors(), 2) << std::endl;

@@ -5,8 +5,15 @@
 
 namespace runner_ns_x11 {
 
+using namespace graphics_ns_base;
+using namespace graphics_ns_base::graphics_ns_x11;
+
 #define KEY_ESCAPE     9
 #define KEY_SPACEBAR  65
+#define KEY_UP       111
+#define KEY_RIGHT    114
+#define KEY_DOWN     116
+#define KEY_LEFT     113
 
 bool runner::get_event(XEvent& event) const
 {
@@ -26,7 +33,7 @@ bool runner::handle_event(XEvent& event) const
 	case Expose:
 		DBG("Got expose event");
 		if (event.xexpose.count == 0) {
-			_g->demo();
+			draw();
 		}
 		break;
 	case KeyPress:
@@ -54,9 +61,20 @@ bool runner::handle_event(XEvent& event) const
 	return ret;
 };
 
+void runner::draw() const
+{
+	int width = _g->get_width() / 10;
+	int height = _g->get_height() / 10;
+	graphics_base::point tl{_x, _y};
+	graphics_base::size sz{width, height};
+
+	_g->demo();
+	_g->draw_rect(tl, sz, graphics_base::bright_red, false);
+};
+
 runner::runner(graphics& g) :
-	_g {&g},
-	_is_running {true}
+	_g{&g},
+	_is_running{true}
 {
 };
 
