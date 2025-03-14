@@ -39,6 +39,8 @@ public:
 		bright_purple,
 		purple,
 		dark_purple,
+
+		__last_color__ // "private"
 	} color_idx;
 
 	typedef enum

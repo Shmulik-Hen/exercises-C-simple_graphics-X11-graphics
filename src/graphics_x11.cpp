@@ -132,9 +132,9 @@ graphics_base::bounds_status graphics::in_bounds(dot p) const
 };
 
 graphics::graphics() :
-				_width{DEFAULT_WIDTH},
-		       _height{DEFAULT_HEIGHT},
-		       _name{DEFAULT_NAME}
+	_width{DEFAULT_WIDTH},
+	_height{DEFAULT_HEIGHT},
+	_name{DEFAULT_NAME}
 {
 	try {
 		init_graphics();
@@ -221,12 +221,12 @@ void graphics::refresh() const
 	XSendEvent(_display, _window, false, ExposureMask, &ev);
 };
 
-unsigned long graphics::get_color_val(color_idx i) const
+inline unsigned long graphics::get_color_val(color_idx i) const
 {
 	return _colors->find(i)->second.val;
 };
 
-std::string graphics::get_color_name(color_idx i) const
+inline std::string graphics::get_color_name(color_idx i) const
 {
 	return _colors->find(i)->second.name;
 };
@@ -275,6 +275,27 @@ void graphics::draw_text(dot p, std::string s, color_idx i) const
 	XDrawText(_display, _window, _gc, p.x, p.y, &txt, 1);
 };
 
+void graphics::draw_pixel(dot p, color_idx i) const
+{
+#ifdef DEBUG_MODE
+	std::string s = get_color_name(i) + SEP;
+	int len = std::max((int)s.length(), 15);
+
+	std::cout << PIXEL_PFX
+		<< DEC(i, 2) << SEP << STR(s, len)
+		<< DEC(p.x, 4) << SEP << DEC(p.y, 4) << SEP
+		<< HEX(get_color_val(i), 8) << std::endl;
+#endif //DEBUG_MODE
+
+	if (in_bounds(p) != BOUNDS_OK) {
+		DBG("Out of bounds");
+		return;
+	}
+
+	XSetForeground(_display, _gc, get_color_val(i));
+	XDrawPoint(_display, _window, _gc, p.x, p.y);
+};
+
 void graphics::demo() const
 {
 	color_t::iterator it;
@@ -291,9 +312,9 @@ void graphics::demo() const
 		tl = {x, y};
 		br = {x+gap, y+gap};
 		rc = in_bounds(br);
-		if (it->first && ((it->first%10) == 0)) {
-			rc = BOUNDS_X_OUT;
-		}
+		// if (it->first && ((it->first%10) == 0)) {
+		// 	rc = BOUNDS_X_OUT;
+		// }
 
 		switch (rc)
 		{
@@ -335,12 +356,20 @@ void graphics::demo() const
 	br = {_width-1, y+gap};
 	draw_rect(tl, br, _bg);
 
-	// blank from next row to the bottom
+	// blank from next row to the bottom - seriously?
 	y += gap;
 	x = 0;
 	tl = {x, y};
 	br = {_width-1, _height-1};
 	draw_rect(tl, br, _bg);
+
+	y += gap;
+	x += gap;
+	for (int i = 0; i < 300; i++) {
+		color_idx c = (color_idx)(i % get_num_colors());
+		p = {x + i, y + i};
+		draw_pixel(p, c);
+	}
 };
 
 } // namespace graphics_ns_x11

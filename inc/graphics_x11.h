@@ -16,6 +16,7 @@ const std::string HEX_PFX	= "0x";
 const std::string SEP		= ", ";
 const std::string RECT_PFX	= "rect: ";
 const std::string TEXT_PFX	= "text: ";
+const std::string PIXEL_PFX	= "pixel: ";
 
 #define HEX(n, w) HEX_PFX << std::hex << std::setw((w)) << std::setfill('0') << std::right << (n)
 #define DEC(n, w) std::dec << std::setw((w)) << std::setfill(' ') << std::right << (n)
@@ -60,11 +61,13 @@ public:
 	graphics(int, int, const char*);
 	~graphics();
 
-	const Display* get_display() const {return _display;};
-	unsigned long get_color_val(color_idx) const;
-	std::string get_color_name(color_idx) const;
+	const inline Display* get_display() const {return _display;};
+	const inline color_idx get_num_colors() const {return __last_color__;};
+	inline unsigned long get_color_val(color_idx) const;
+	inline std::string get_color_name(color_idx) const;
 	void draw_rect(dot, dot, color_idx) const;
 	void draw_text(dot, std::string, color_idx) const;
+	void draw_pixel(dot, color_idx) const;
 	void demo() const;
 	void refresh() const;
 };
