@@ -1,7 +1,10 @@
 #ifndef __GRAPHICS_BASE_H__
 #define __GRAPHICS_BASE_H__
 
-namespace graphics_ns_base {
+#include <string>
+
+namespace graphics_ns_base
+{
 
 class graphics_base
 {
@@ -11,7 +14,9 @@ private:
 public:
 	typedef enum
 	{
-		black = 0,
+		__first_color__  = 0, // Dummy, not an qctual color
+
+		black = __first_color__,
 		white,
 		grey,
 		dark_grey,
@@ -40,7 +45,7 @@ public:
 		purple,
 		dark_purple,
 
-		__last_color__ // "private"
+		__last_color__ // Dummy, not an qctual color
 	} color_idx;
 
 	typedef enum
@@ -56,7 +61,20 @@ public:
 		int y;
 	} dot;
 
-	virtual bounds_status in_bounds(dot) const = 0;
+	typedef struct {
+		std::string name;
+		unsigned long val;
+	} color_data_t;
+
+	virtual inline const bounds_status is_in_bounds(dot) const = 0;
+	virtual inline const bool is_valid_color(color_idx) const = 0;
+	virtual inline const int get_num_colors() const = 0;
+	virtual inline const unsigned long get_color_val(color_idx) const = 0;
+	virtual inline const std::string get_color_name(color_idx) const = 0;
+	virtual void draw_pixel(dot, color_idx) const = 0;
+	virtual void draw_line(dot, dot, color_idx) const = 0;
+	virtual void draw_rect(dot, dot, color_idx, bool) const = 0;
+	virtual void draw_text(dot, std::string, color_idx) const = 0;
 	virtual void refresh() const = 0;
 };
 

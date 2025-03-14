@@ -1,11 +1,13 @@
 #include <stdexcept>
-#include <iostream>
-#include <iomanip>
 #include <graphics_x11.h>
 
 namespace graphics_ns_base {
 
 namespace graphics_ns_x11 {
+
+const int DEFAULT_WIDTH  = 320;
+const int DEFAULT_HEIGHT = 240;
+const char* DEFAULT_NAME = "Graphics_X11";
 
 #define GMASK 0x00FFFFFF
 #define CMASK 0xFF
@@ -20,15 +22,20 @@ namespace graphics_ns_x11 {
 #define LOWC 0x3F
 #define MINC 0x00
 
-const int DEFAULT_WIDTH  = 800;
-const int DEFAULT_HEIGHT = 600;
-const char* DEFAULT_NAME = "Graphics_X11";
+#ifdef DEBUG_GRFX
+const std::string PIXEL_PFX	= "pixel: ";
+const std::string LINE_PFX	= "line: ";
+const std::string RECT_PFX	= "rect: ";
+const std::string TEXT_PFX	= "text: ";
+#endif //DEBUG_GRFX
 
 using namespace graphics_ns_base;
 
 void graphics::init_colors()
 {
 	_colors = new color_t {
+		// __first_color__ mustn't be defined
+
 		{black,			{"black",			RGB(MINC, MINC, MINC)}},
 		{white,			{"white",			RGB(MAXC, MAXC, MAXC)}},
 		{grey,			{"grey",			RGB(MIDC, MIDC, MIDC)}},
@@ -57,6 +64,8 @@ void graphics::init_colors()
 		{bright_purple,	{"bright_purple",	RGB(MAXC, MINC, MAXC)}},
 		{purple,		{"purple",			RGB(MIDC, MINC, MIDC)}},
 		{dark_purple,	{"dark_purple",		RGB(LOWC, MINC, LOWC)}},
+
+		// __last_color__ mustn't be defined
 	};
 };
 
@@ -116,19 +125,6 @@ void graphics::init_graphics()
 	if (!rc) {
 		throw std::runtime_error("Unable to map window");
 	}
-};
-
-graphics_base::bounds_status graphics::in_bounds(dot p) const
-{
-	int rc = BOUNDS_OK;
-
-	if (p.x < 0 || p.x >= _width)
-		rc |= BOUNDS_X_OUT;
-
-	if (p.y < 0 || p.y >= _height)
-		rc |= BOUNDS_Y_OUT;
-
-	return (graphics_base::bounds_status)rc;
 };
 
 graphics::graphics() :
@@ -200,6 +196,131 @@ graphics::~graphics()
 	}
 };
 
+inline const graphics_base::bounds_status graphics::is_in_bounds(dot p) const
+{
+	int rc = BOUNDS_OK;
+
+	if (p.x < 0 || p.x >= _width)
+		rc |= BOUNDS_X_OUT;
+
+	if (p.y < 0 || p.y >= _height)
+		rc |= BOUNDS_Y_OUT;
+
+	return (graphics_base::bounds_status)rc;
+};
+
+inline const bool graphics::is_valid_color(color_idx i) const
+{
+	return (i >= __first_color__ && i < __last_color__);
+};
+
+inline const bool graphics::is_bright_color(color_idx i) const
+{
+	return (i == white || i == bright_yellow);
+};
+
+inline const unsigned long graphics::get_color_val(color_idx i) const
+{
+	return _colors->find(i)->second.val;
+};
+
+inline const std::string graphics::get_color_name(color_idx i) const
+{
+	return _colors->find(i)->second.name;
+};
+
+void graphics::draw_pixel(dot p, color_idx i) const
+{
+#ifdef DEBUG_GRFX
+	std::string s = get_color_name(i) + SEP;
+	int len = std::max((int)s.length(), 15);
+
+	std::cout << DBG_PFX << PIXEL_PFX
+		<< DEC(i, 2) << SEP << STR(s, len)
+		<< DEC(p.x, 4) << SEP << DEC(p.y, 4) << SEP
+		<< HEX(get_color_val(i), 8) << std::endl;
+#endif //DEBUG_GRFX
+
+	if (is_in_bounds(p) != BOUNDS_OK) {
+		WARN("Out of bounds");
+		return;
+	}
+
+	XSetForeground(_display, _gc, get_color_val(i));
+	XDrawPoint(_display, _window, _gc, p.x, p.y);
+};
+
+void graphics::draw_line(dot tl, dot br, color_idx i) const
+{
+#ifdef DEBUG_GRFX
+	std::string s = get_color_name(i) + SEP;
+	int len = std::max((int)s.length(), 15);
+
+	std::cout << DBG_PFX << LINE_PFX
+		<< DEC(i, 2) << SEP << STR(s, len)
+		<< DEC(tl.x, 4) << SEP << DEC(tl.y, 4) << SEP
+		<< DEC(br.x, 4) << SEP << DEC(br.y, 4) << SEP
+		<< HEX(get_color_val(i), 8) << std::endl;
+#endif //DEBUG_GRFX
+
+	if (is_in_bounds(tl) != BOUNDS_OK || is_in_bounds(br) != BOUNDS_OK) {
+		WARN("Out of bounds");
+		return;
+	}
+
+	XSetForeground(_display, _gc, get_color_val(i));
+	XDrawLine(_display, _window, _gc, tl.x, tl.y, br.x, br.y);
+};
+
+void graphics::draw_rect(dot tl, dot sz, color_idx i, bool fill) const
+{
+#ifdef DEBUG_GRFX
+	std::string s = get_color_name(i) + SEP;
+	int len = std::max((int)s.length(), 15);
+
+	std::cout << DBG_PFX << RECT_PFX
+		<< DEC(i, 2) << SEP << STR(s, len)
+		<< DEC(tl.x, 4) << SEP << DEC(tl.y, 4) << SEP
+		<< DEC(sz.x, 4) << SEP << DEC(sz.y, 4) << SEP
+		<< HEX(get_color_val(i), 8) << std::endl;
+#endif //DEBUG_GRFX
+
+	if (is_in_bounds(tl) != BOUNDS_OK || is_in_bounds({sz.x+tl.x, sz.y+tl.y}) != BOUNDS_OK) {
+		WARN("Out of bounds");
+		return;
+	}
+
+	XSetForeground(_display, _gc, get_color_val(i));
+	if (fill) {
+		XFillRectangle(_display, _window, _gc, tl.x, tl.y, sz.x, sz.y);
+	}
+	else {
+		XDrawRectangle(_display, _window, _gc, tl.x, tl.y, sz.x, sz.y);
+	}
+};
+
+void graphics::draw_text(dot p, std::string s, color_idx i) const
+{
+#ifdef DEBUG_GRFX
+	std::string s2 = get_color_name(i) + SEP;
+	int len = std::max((int)s2.length(), 15);
+
+	std::cout << DBG_PFX << TEXT_PFX
+		<< DEC(i, 2) << SEP << STR(s2, len)
+		<< DEC(p.x, 4) << SEP << DEC(p.y, 4) << SEP
+		<< HEX(get_color_val(i), 8) << std::endl;
+#endif //DEBUG_GRFX
+
+	if (is_in_bounds(p) != BOUNDS_OK) {
+		WARN("Out of bounds");
+		return;
+	}
+
+	XTextItem txt{(char*)s.c_str(), (int)s.length(), 1, None};
+	XSetForeground(_display, _gc, get_color_val(i));
+	XDrawText(_display, _window, _gc, p.x, p.y, &txt, 1);
+};
+
 void graphics::refresh() const
 {
 	XEvent ev;
@@ -221,123 +342,41 @@ void graphics::refresh() const
 	XSendEvent(_display, _window, false, ExposureMask, &ev);
 };
 
-inline unsigned long graphics::get_color_val(color_idx i) const
-{
-	return _colors->find(i)->second.val;
-};
-
-inline std::string graphics::get_color_name(color_idx i) const
-{
-	return _colors->find(i)->second.name;
-};
-
-void graphics::draw_rect(dot tl, dot br, color_idx i) const
-{
-#ifdef DEBUG_MODE
-	std::string s = get_color_name(i) + SEP;
-	int len = std::max((int)s.length(), 15);
-
-	std::cout << RECT_PFX
-		<< DEC(i, 2) << SEP << STR(s, len)
-		<< DEC(tl.x, 4) << SEP << DEC(tl.y, 4) << SEP
-		<< DEC(br.x, 4) << SEP << DEC(br.y, 4) << SEP
-		<< HEX(get_color_val(i), 8) << std::endl;
-#endif //DEBUG_MODE
-
-	if (in_bounds(tl) != BOUNDS_OK || in_bounds(br) != BOUNDS_OK) {
-		DBG("Out of bounds");
-		return;
-	}
-
-	XSetForeground(_display, _gc, get_color_val(i));
-	XFillRectangle(_display, _window, _gc, tl.x, tl.y, br.x, br.y);
-};
-
-void graphics::draw_text(dot p, std::string s, color_idx i) const
-{
-#ifdef DEBUG_MODE
-	std::string s2 = get_color_name(i) + SEP;
-	int len = std::max((int)s2.length(), 15);
-
-	std::cout << TEXT_PFX
-		<< DEC(i, 2) << SEP << STR(s2, len)
-		<< DEC(p.x, 4) << SEP << DEC(p.y, 4) << SEP
-		<< HEX(get_color_val(i), 8) << std::endl;
-#endif //DEBUG_MODE
-
-	if (in_bounds(p) != BOUNDS_OK) {
-		DBG("Out of bounds");
-		return;
-	}
-
-	XTextItem txt{(char*)s.c_str(), (int)s.length(), 1, None};
-	XSetForeground(_display, _gc, get_color_val(i));
-	XDrawText(_display, _window, _gc, p.x, p.y, &txt, 1);
-};
-
-void graphics::draw_pixel(dot p, color_idx i) const
-{
-#ifdef DEBUG_MODE
-	std::string s = get_color_name(i) + SEP;
-	int len = std::max((int)s.length(), 15);
-
-	std::cout << PIXEL_PFX
-		<< DEC(i, 2) << SEP << STR(s, len)
-		<< DEC(p.x, 4) << SEP << DEC(p.y, 4) << SEP
-		<< HEX(get_color_val(i), 8) << std::endl;
-#endif //DEBUG_MODE
-
-	if (in_bounds(p) != BOUNDS_OK) {
-		DBG("Out of bounds");
-		return;
-	}
-
-	XSetForeground(_display, _gc, get_color_val(i));
-	XDrawPoint(_display, _window, _gc, p.x, p.y);
-};
-
 void graphics::demo() const
 {
 	color_t::iterator it;
 	int x = 0, y = 0, gap = 50, rc;
-	dot tl, br, p;
+	dot tl, br, sz, p;
 
+#ifdef DEBUG_GRFX
+	std::cout << DBG_PFX << STR("Number of colors: ", 1) << DEC(get_num_colors(), 2) << std::endl;
+#endif
+
+	// filled rects
 	for (it = _colors->begin(); it != _colors->end(); x+=gap, it++) {
 		std::string s = std::to_string(it->first);
 		color_idx c = white;
 
-		if (it->first == white || it->first == bright_yellow)
+		if (is_bright_color(it->first)) {
 			c = black;
+		}
 
 		tl = {x, y};
+		sz = {gap, gap};
 		br = {x+gap, y+gap};
-		rc = in_bounds(br);
-		// if (it->first && ((it->first%10) == 0)) {
-		// 	rc = BOUNDS_X_OUT;
-		// }
 
+		rc = is_in_bounds(br);
 		switch (rc)
 		{
 		case BOUNDS_OK:
 			DBG("BOUNDS_OK");
-			p = {x + 10, y + 10};
-			draw_rect(tl, br, it->first);
-			draw_text(p, s, c);
 			break;
 		case BOUNDS_X_OUT:
 			DBG("BOUNDS_X_OUT");
-			// blank to the end of the row - why? what's wrong with X11?
-			p = {_width-1, y+gap};
-			draw_rect(tl, p, _bg);
-
 			// start in a new row
 			y += gap;
 			x = 0;
 			tl = {x, y};
-			br = {x+gap, y+gap};
-			p = {x + 10, y + 10};
-			draw_rect(tl, br, it->first);
-			draw_text(p, s, c);
 			break;
 		case BOUNDS_Y_OUT:
 			DBG("BOUNDS_Y_OUT");
@@ -349,25 +388,81 @@ void graphics::demo() const
 			DBG("BOUNDS_BOTH_OUT");
 			return;
 		}
+
+		draw_rect(tl, sz, it->first, true);
+		p = {x + 10, y + 10};
+		draw_text(p, s, c);
 	}
 
-	// blank from next square to the end of the row - again, why?
-	tl = {x, y};
-	br = {_width-1, y+gap};
-	draw_rect(tl, br, _bg);
-
-	// blank from next row to the bottom - seriously?
+	// empty rects
 	y += gap;
 	x = 0;
-	tl = {x, y};
-	br = {_width-1, _height-1};
-	draw_rect(tl, br, _bg);
+	for (it = _colors->begin(); it != _colors->end(); x += gap, it++) {
+		std::string s = std::to_string(it->first);
+		color_idx c = white;
 
+		tl = {x, y};
+		sz = {gap, gap};
+		br = {x+gap, y+gap};
+
+		rc = is_in_bounds(br);
+		switch (rc) {
+		case BOUNDS_OK:
+			DBG("BOUNDS_OK");
+			break;
+		case BOUNDS_X_OUT:
+			DBG("BOUNDS_X_OUT");
+			// start in a new row
+			y += gap;
+			x = 0;
+			tl = {x, y};
+		break;
+		case BOUNDS_Y_OUT:
+			DBG("BOUNDS_Y_OUT");
+			return;
+		case BOUNDS_BOTH_OUT:
+			DBG("BOUNDS_BOTH_OUT");
+			return;
+		default:
+			DBG("BOUNDS_BOTH_OUT");
+			return;
+	  }
+
+		draw_rect(tl, sz, it->first, false);
+		p = {x + 10, y + 10};
+		draw_text(p, s, c);
+	}
+
+	// lines
+	y += gap*2;
+	x = gap;
+	tl = {x, y};
+	br = {x+6*gap, y+gap};
+	draw_line(tl, br, bright_yellow);
+
+	// pixels
 	y += gap;
+	x = gap;
+	p = {x, y};
+	draw_pixel(p, bright_yellow);
+
 	x += gap;
 	for (int i = 0; i < 300; i++) {
 		color_idx c = (color_idx)(i % get_num_colors());
-		p = {x + i, y + i};
+#ifdef DEBUG_GRFX
+		std::cout << DBG_PFX << STR("color: ", 1) << DEC(c, 2) << std::endl;
+#endif
+
+		if (!is_valid_color(c)) {
+			WARN("Not a valid color");
+			continue;
+		}
+
+		if (c == black) {
+			continue;
+		}
+
+		p = {x+i*2, y+i};
 		draw_pixel(p, c);
 	}
 };

@@ -3,13 +3,17 @@ INC_DIR   := ./inc
 BLD_DIR   := ./bin
 VAL_DIR   := ./validations
 TARGET    := $(BLD_DIR)/graphics
-SRCS      := $(shell find $(SRC_DIR) -name '*.cpp' -printf '%p ')
+SRCS      := $(sort $(shell find $(SRC_DIR) -name '*.cpp' -printf '%p '))
 OBJS      := $(subst $(SRC_DIR),$(BLD_DIR),$(SRCS:%.cpp=%.o))
 DEPS      := $(OBJS:.o=.d)
 INC_FLAGS := $(addprefix -I,$(INC_DIR))
 CPPFLAGS  := -MMD -MP
 LDFLAGS   += -lX11
-CXXFLAGS  += $(INC_FLAGS) -g -fdiagnostics-color=always
+CXXFLAGS  += -Wall $(INC_FLAGS) -g -fdiagnostics-color=always
+
+ifeq ($(DEBUG), 1)
+CXXFLAGS += -DDEBUG_GRFX
+endif
 
 .PHONY: all
 
