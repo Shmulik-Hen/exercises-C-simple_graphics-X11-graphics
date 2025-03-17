@@ -4,27 +4,26 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <graphics_base.h>
 
 const std::string ERR_PFX	= "Error: ";
 const std::string WARN_PFX	= "Warning: ";
-
-#define ERR(s)	std::cout << ERR_PFX << (s) << std::endl;
-#define WARN(s) std::cout << WARN_PFX << (s) << std::endl;
-
-#ifdef DEBUG_GRFX
-#include <iostream>
-#include <iomanip>
-
-const std::string DBG_PFX	= "Debug: ";
+const std::string INFO_PFX	= "Info: ";
 const std::string HEX_PFX	= "0x";
 const std::string SEP		= ", ";
 
 #define HEX(n, w) HEX_PFX << std::hex << std::setw((w)) << std::setfill('0') << std::right << (n)
 #define DEC(n, w) std::dec << std::setw((w)) << std::setfill(' ') << std::right << (n)
 #define STR(s, w) std::setw((w)) << std::setfill(' ') << std::left << (s)
+#define ERR(s)	  std::cout << STR(ERR_PFX, 1) << STR((s), 1) << std::endl;
+#define WARN(s)	  std::cout << STR(WARN_PFX, 1) << STR((s), 1) << std::endl;
+#define INFO(s)	  std::cout << STR(INFO_PFX, 1) << STR((s), 1) << std::endl;
+
+#ifdef DEBUG_GRFX
+const std::string DBG_PFX	= "Debug: ";
 #define DBG(s)    std::cout << STR(DBG_PFX, 1) << STR((s), 1) << std::endl
 #else
 #define DBG(...)
@@ -37,7 +36,22 @@ namespace graphics_ns_x11 {
 class graphics : graphics_base
 {
 private:
-	typedef std::map<color_idx, color_data_t> color_t;
+	struct _rgb {
+		uint16_t r = 0;
+		uint16_t g = 0;
+		uint16_t b = 0;
+	};
+
+	struct color_data
+	{
+		std::string name;
+		_rgb rgb;
+		uint64_t val;
+		bool done = false;
+		bool bright = false;
+	};
+
+	typedef std::map<color_idx, color_data> color;
 
 	Display* _display {NULL};
 	GC _gc {NULL};
@@ -46,12 +60,12 @@ private:
 	Window _root;
 	int _screen;
 	Colormap _cmap;
-	const int _width;
-	const int _height;
-	const color_idx _bg {black};
-	const color_idx _fg {white};
+	int _width;
+	int _height;
+	color_idx _bg {black};
+	color_idx _fg {white};
 	const char* _name;
-	color_t* _colors {NULL};
+	color *_colors {NULL};
 
 	void init_colors();
 	void init_graphics();
@@ -69,7 +83,7 @@ public:
 	inline const int get_num_colors() const {return __last_color__;};
 	inline const int get_width() const {return _width;};
 	inline const int get_height() const {return _height;};
-	inline const unsigned long get_color_val(color_idx) const;
+	inline const color_val get_color_val(color_idx) const;
 	inline const std::string get_color_name(color_idx) const;
 	void draw_pixel(point, color_idx) const;
 	void draw_line(point, point, color_idx) const;

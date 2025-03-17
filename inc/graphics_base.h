@@ -2,9 +2,12 @@
 #define __GRAPHICS_BASE_H__
 
 #include <string>
+#include <stdint.h>
 
 namespace graphics_ns_base
 {
+
+typedef uint64_t color_val;
 
 class graphics_base
 {
@@ -12,7 +15,7 @@ private:
 	virtual void init_graphics() = 0;
 
 public:
-	typedef enum
+	enum color_idx
 	{
 		__first_color__  = 0, // Dummy, not an qctual color
 
@@ -46,37 +49,34 @@ public:
 		dark_purple,
 
 		__last_color__ // Dummy, not an qctual color
-	} color_idx;
+	};
 
-	typedef enum
+	enum bounds_status
 	{
 		BOUNDS_OK   	= 0x00000000,
 		BOUNDS_X_OUT    = 0x00000001,
 		BOUNDS_Y_OUT    = 0x00000002,
 		BOUNDS_BOTH_OUT	= (BOUNDS_X_OUT | BOUNDS_Y_OUT)
-	} bounds_status;
+	};
 
-	typedef struct {
-		int x;
-		int y;
-	} point;
+	struct point
+	{
+		int x = 0;
+		int y = 0;
+	};
 
-	typedef struct {
-		int width;
-		int height;
-	} size;
-
-	typedef struct {
-		std::string name;
-		unsigned long val;
-	} color_data_t;
+	struct size
+	{
+		int w = 0;
+		int h = 0;
+	};
 
 	virtual inline const bounds_status is_in_bounds(point) const = 0;
 	virtual inline const bool is_valid_color(color_idx) const = 0;
 	virtual inline const int get_num_colors() const = 0;
 	virtual inline const int get_width() const = 0;
 	virtual inline const int get_height() const = 0;
-	virtual inline const unsigned long get_color_val(color_idx) const = 0;
+	virtual inline const color_val get_color_val(color_idx) const = 0;
 	virtual inline const std::string get_color_name(color_idx) const = 0;
 	virtual void draw_pixel(point, color_idx) const = 0;
 	virtual void draw_line(point, point, color_idx) const = 0;

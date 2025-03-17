@@ -1,4 +1,6 @@
 #include <stdexcept>
+#include <utility>
+#include <string.h>
 #include <graphics_x11.h>
 
 namespace graphics_ns_base {
@@ -11,16 +13,10 @@ const char* DEFAULT_NAME = "Graphics_X11";
 
 #define GMASK 0x00FFFFFF
 #define CMASK 0xFF
-
 #define R(x) (((x) & CMASK) << 16)
 #define G(x) (((x) & CMASK) << 8)
 #define B(x) ((x) & CMASK)
 #define RGB(r, g, b) ((R(r) + G(g) + B(b)) & GMASK)
-
-#define MAXC 0xFF
-#define MIDC 0x7F
-#define LOWC 0x3F
-#define MINC 0x00
 
 #ifdef DEBUG_GRFX
 const std::string PIXEL_PFX	= "pixel: ";
@@ -33,47 +29,110 @@ using namespace graphics_ns_base;
 
 void graphics::init_colors()
 {
-	_colors = new color_t {
-		// __first_color__ mustn't be defined
-
-		{black,			{"black",			RGB(MINC, MINC, MINC)}},
-		{white,			{"white",			RGB(MAXC, MAXC, MAXC)}},
-		{grey,			{"grey",			RGB(MIDC, MIDC, MIDC)}},
-		{dark_grey,		{"dark_grey",		RGB(LOWC, LOWC, LOWC)}},
-
-		{bright_red,	{"bright_red",		RGB(MAXC, MINC, MINC)}},
-		{red,			{"red",				RGB(MIDC, MINC, MINC)}},
-		{dark_red,		{"dark_red",		RGB(LOWC, MINC, MINC)}},
-
-		{bright_orange,	{"bright_orange",	RGB(MAXC, LOWC, MINC)}},
-		{orange,		{"orange",			RGB(MIDC, LOWC, MINC)}},
-		{dark_orange,	{"dark_orange",		RGB(LOWC, LOWC, MINC)}},
-
-		{bright_yellow,	{"bright_yellow",	RGB(MAXC, MAXC, MINC)}},
-		{yellow,		{"yellow",			RGB(MIDC, MIDC, MINC)}},
-		{dark_yellow,	{"dark_yellow",		RGB(LOWC, LOWC, MINC)}},
-
-		{bright_green,	{"bright_green",	RGB(MINC, MAXC, MINC)}},
-		{green,			{"green",			RGB(MINC, MIDC, MINC)}},
-		{dark_green,	{"dark_green",		RGB(MINC, LOWC, MINC)}},
-
-		{bright_blue,	{"bright_blue",		RGB(MINC, MINC, MAXC)}},
-		{blue,			{"blue",			RGB(MINC, MINC, MIDC)}},
-		{dark_blue,		{"dark_blue",		RGB(MINC, MINC, LOWC)}},
-
-		{bright_purple,	{"bright_purple",	RGB(MAXC, MINC, MAXC)}},
-		{purple,		{"purple",			RGB(MIDC, MINC, MIDC)}},
-		{dark_purple,	{"dark_purple",		RGB(LOWC, MINC, LOWC)}},
-
-		// __last_color__ mustn't be defined
+	const char *tmp_col[get_num_colors()] =  {
+		"black",
+		"white",
+		"light grey",
+		"dim grey",
+		"red1",
+		"red4",
+		"red4",
+		"orange1",
+		"orange3",
+		"orange4",
+		"yellow1",
+		"yellow4",
+		"yellow4",
+		"green1",
+		"green4",
+		"green4",
+		"blue1",
+		"blue4",
+		"blue4",
+		"purple1",
+		"purple3",
+		"purple4"
 	};
+
+	_colors = new color;
+	_colors->clear();
+
+	int errors = 0;
+	for (int i = __first_color__; i < __last_color__; i++) {
+		color_idx idx = (color_idx)i;
+		const char *s = tmp_col[i];
+
+		if (!strlen((s ? s : ""))) {
+			WARN("empty string");
+			errors++;
+			continue;
+		}
+
+		XColor xc, def;
+		int rc = XLookupColor(_display, _cmap, s, &xc, &def);
+		if (rc != 1) {
+			WARN("color not found");
+			errors++;
+			continue;
+		}
+
+		// fine tuning
+		switch (idx) {
+		case dark_red:
+			xc.red -= 66;
+			break;
+		case dark_yellow:
+			xc.red -= 66;
+			xc.green -= 66;
+			break;
+		case dark_green:
+			xc.green -= 66;
+			break;
+		case dark_blue:
+			xc.blue -= 66;
+			break;
+		default:
+			break;
+		}
+
+		color_data d;
+		d.name = std::string{s};
+		d.rgb = {xc.red, xc.green, xc.blue};
+		d.val = RGB(d.rgb.r, d.rgb.g, d.rgb.b);
+		d.bright = is_bright_color(idx);
+		d.done = true;
+
+		std::pair p = {idx, d};
+		_colors->insert(p);
+	}
+
+	if (errors || _colors->empty()) {
+		throw std::runtime_error("there were color initialization errors");
+	}
+
+#ifdef DEBUG_GRFX
+	std::cout << _colors->size() << std::endl;
+	for (color::iterator it = _colors->begin(); it != _colors->end(); it++) {
+	  color_idx c = it->first;
+	  color_data d = it->second;
+	  std::string s = d.name + ',';
+
+	  std::cout << "-----" << std::endl
+		    << DEC(c, 2) << std::endl
+		    << STR(s, 15) << HEX(d.val, 8) << std::endl
+		    << HEX(d.rgb.r, 2) << SEP
+		    << HEX(d.rgb.g, 2) << SEP
+		    << HEX(d.rgb.g, 2) << SEP << std::endl
+		    << d.bright << SEP << d.done << std::endl;
+	}
+
+	std::cout << "-----" << std::endl;
+#endif
 };
 
 void graphics::init_graphics()
 {
 	int rc;
-
-	init_colors();
 
 	_display = XOpenDisplay(NULL);
 	if (!_display) {
@@ -84,6 +143,13 @@ void graphics::init_graphics()
 	_visual = DefaultVisualOfScreen(ScreenOfDisplay(_display, _screen));
 	_root = RootWindow(_display, _screen);
 	_cmap = DefaultColormap(_display, _screen);
+
+	try {
+		init_colors();
+	}
+	catch (std::runtime_error& e) {
+		throw;
+	}
 
 	_window = XCreateSimpleWindow(_display, _root, 0, 0, _width, _height, 1,
 								  get_color_val(_fg), get_color_val(_bg));
@@ -216,10 +282,20 @@ inline const bool graphics::is_valid_color(color_idx i) const
 
 inline const bool graphics::is_bright_color(color_idx i) const
 {
-	return (i == white || i == bright_yellow);
+	switch (i) {
+	case white:
+	case grey:
+	case bright_yellow:
+	case yellow:
+	case bright_green:
+	case green:
+		return true;
+	default:
+		return false;
+	}
 };
 
-inline const unsigned long graphics::get_color_val(color_idx i) const
+inline const color_val graphics::get_color_val(color_idx i) const
 {
 	return _colors->find(i)->second.val;
 };
@@ -281,21 +357,21 @@ void graphics::draw_rect(point tl, size sz, color_idx i, bool fill) const
 	std::cout << DBG_PFX << RECT_PFX
 		<< DEC(i, 2) << SEP << STR(s, len)
 		<< DEC(tl.x, 4) << SEP << DEC(tl.y, 4) << SEP
-		<< DEC(sz.x, 4) << SEP << DEC(sz.y, 4) << SEP
+		<< DEC(sz.w, 4) << SEP << DEC(sz.h, 4) << SEP
 		<< HEX(get_color_val(i), 8) << std::endl;
 #endif //DEBUG_GRFX
 
-	if (is_in_bounds(tl) != BOUNDS_OK || is_in_bounds({tl.x+sz.width, tl.y+sz.height}) != BOUNDS_OK) {
+	if (is_in_bounds(tl) != BOUNDS_OK || is_in_bounds({tl.x+sz.w, tl.y+sz.h}) != BOUNDS_OK) {
 		WARN("Out of bounds");
 		return;
 	}
 
 	XSetForeground(_display, _gc, get_color_val(i));
 	if (fill) {
-		XFillRectangle(_display, _window, _gc, tl.x, tl.y, sz.width, sz.height);
+		XFillRectangle(_display, _window, _gc, tl.x, tl.y, sz.w, sz.h);
 	}
 	else {
-		XDrawRectangle(_display, _window, _gc, tl.x, tl.y, sz.width, sz.height);
+		XDrawRectangle(_display, _window, _gc, tl.x, tl.y, sz.w, sz.h);
 	}
 };
 
@@ -344,7 +420,6 @@ void graphics::refresh() const
 
 void graphics::demo() const
 {
-	color_t::iterator it;
 	int x = 0, y = 0, gap = 50, rc;
 	point tl, br, p;
 	size sz;
@@ -354,7 +429,7 @@ void graphics::demo() const
 #endif
 
 	// filled rects
-	for (it = _colors->begin(); it != _colors->end(); x+=gap, it++) {
+	for (color::const_iterator it = _colors->cbegin(); it != _colors->cend(); x+=gap, it++) {
 		std::string s = std::to_string(it->first);
 		color_idx c = white;
 
@@ -398,7 +473,8 @@ void graphics::demo() const
 	// empty rects
 	y += gap;
 	x = 0;
-	for (it = _colors->begin(); it != _colors->end(); x += gap, it++) {
+
+	for (color::const_iterator it = _colors->cbegin(); it != _colors->cend(); x += gap, it++) {
 		std::string s = std::to_string(it->first);
 		color_idx c = white;
 
