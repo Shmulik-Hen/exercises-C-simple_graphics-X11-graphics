@@ -116,12 +116,12 @@ void graphics::init_colors()
 	  std::string s = d.name + ',';
 
 	  std::cout << "-----" << std::endl
-		    << DEC(c, 2) << std::endl
-		    << STR(s, 15) << HEX(d.val, 8) << std::endl
-		    << HEX(d.rgb.r, 2) << SEP
-		    << HEX(d.rgb.g, 2) << SEP
-		    << HEX(d.rgb.g, 2) << SEP << std::endl
-		    << d.bright << SEP << d.done << std::endl;
+			<< DEC(c, 2) << std::endl
+			<< STR(s, 15) << HEX(d.val, 8) << std::endl
+			<< HEX(d.rgb.r, 2) << SEP
+			<< HEX(d.rgb.g, 2) << SEP
+			<< HEX(d.rgb.g, 2) << SEP << std::endl
+			<< d.bright << SEP << d.done << std::endl;
 	}
 
 	std::cout << "-----" << std::endl;
@@ -245,18 +245,23 @@ graphics::graphics(int w, int h, const char *s) :
 
 graphics::~graphics()
 {
-	if (_display) {
-		XCloseDisplay(_display);
-	}
 
 	if (_gc) {
 		XFreeGC(_display, _gc);
+	}
+
+	if (_ximage) {
+		XDestroyImage(_ximage);
 	}
 
 	XDestroyWindow(_display, _window);
 
 	if (_colors) {
 		delete _colors;
+	}
+
+	if (_display) {
+		XCloseDisplay(_display);
 	}
 };
 
@@ -538,8 +543,44 @@ void graphics::demo() const
 		}
 
 		p = {x+i*2, y+i};
+		if (is_in_bounds(p) != BOUNDS_OK) {
+			break;
+		}
+
 		draw_pixel(p, c);
 	}
+};
+
+int graphics::take_snapshot()
+{
+	XImage *tmp_image = XGetImage(_display, _window, 0, 0, _width, _height, AllPlanes, ZPixmap);
+	if (!tmp_image) {
+		return -1;
+	}
+
+	if (_ximage) {
+		drop_snapshot();
+	}
+
+	_ximage = tmp_image;
+	return 0;
+};
+
+int graphics::drop_snapshot()
+{
+	XDestroyImage(_ximage);
+	_ximage = NULL;
+	return 0;
+};
+
+int graphics::show_snapshot() const
+{
+	if (!_ximage) {
+		return -1;
+	}
+
+	XPutImage(_display, _window, _gc, _ximage, 0, 0, 0, 0, _width, _height);
+	return 0;
 };
 
 } // namespace graphics_ns_x11

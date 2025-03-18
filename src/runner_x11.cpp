@@ -113,7 +113,13 @@ bool runner::handle_event(XEvent& event)
 
 void runner::draw() const
 {
-	_g->demo();
+	if (_g->snapshot_exists()) {
+		_g->show_snapshot();
+	}
+	else {
+		_g->demo();
+		_g->take_snapshot();
+	}
 	_g->draw_rect(_tl, _sz, graphics_base::bright_red, false);
 };
 

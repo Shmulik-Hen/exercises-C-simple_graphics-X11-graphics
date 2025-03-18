@@ -13,7 +13,7 @@ using namespace graphics_ns_base::graphics_ns_x11;
 class runner
 {
 private:
-	const graphics* _g {NULL};
+	graphics* _g {NULL};
 	bool _is_running {false};
 	graphics_base::point _tl;
 	graphics_base::size _sz;

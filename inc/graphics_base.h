@@ -7,7 +7,7 @@
 namespace graphics_ns_base
 {
 
-typedef uint64_t color_val;
+typedef unsigned long color_val;
 
 class graphics_base
 {

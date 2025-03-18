@@ -46,7 +46,7 @@ private:
 	{
 		std::string name;
 		_rgb rgb;
-		uint64_t val;
+		color_val val;
 		bool done = false;
 		bool bright = false;
 	};
@@ -60,6 +60,7 @@ private:
 	Window _root;
 	int _screen;
 	Colormap _cmap;
+	XImage* _ximage {NULL};
 	int _width;
 	int _height;
 	color_idx _bg {black};
@@ -94,6 +95,10 @@ public:
 	inline const Display* get_display() const {return _display;};
 	const bool is_bright_color(color_idx) const;
 	void demo() const;
+	int take_snapshot();
+	int drop_snapshot();
+	int show_snapshot() const;
+	inline const bool snapshot_exists() const {return (_ximage != NULL);};
 };
 
 } // namespace graphics_ns_x11
