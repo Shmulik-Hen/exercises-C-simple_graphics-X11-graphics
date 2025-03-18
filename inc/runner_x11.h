@@ -7,6 +7,7 @@
 
 namespace runner_ns_x11 {
 
+using namespace graphics_ns_base;
 using namespace graphics_ns_base::graphics_ns_x11;
 
 class runner
@@ -14,14 +15,16 @@ class runner
 private:
 	const graphics* _g {NULL};
 	bool _is_running {false};
+	graphics_base::point _tl;
+	graphics_base::size _sz;
+	int _xstep {0};
+	int _ystep {0};
 
-	bool get_event(XEvent&) const;
-	bool handle_event(XEvent&) const;
+	bool get_event(XEvent&);
+	bool handle_event(XEvent&);
 	void draw() const;
 
 public:
-	int _x {0};
-	int _y {0};
 
 	runner(graphics&);
 	void run();

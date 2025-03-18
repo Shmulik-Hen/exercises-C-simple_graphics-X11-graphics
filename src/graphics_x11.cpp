@@ -264,10 +264,10 @@ const graphics_base::bounds_status graphics::is_in_bounds(point p) const
 {
 	int rc = BOUNDS_OK;
 
-	if (p.x < 0 || p.x >= _width)
+	if (p.x < 0 || p.x > _width)
 		rc |= BOUNDS_X_OUT;
 
-	if (p.y < 0 || p.y >= _height)
+	if (p.y < 0 || p.y > _height)
 		rc |= BOUNDS_Y_OUT;
 
 	return (graphics_base::bounds_status)rc;
