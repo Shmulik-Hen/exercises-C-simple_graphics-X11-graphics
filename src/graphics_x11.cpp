@@ -25,8 +25,6 @@ const std::string RECT_PFX	= "rect: ";
 const std::string TEXT_PFX	= "text: ";
 #endif //DEBUG_GRFX
 
-using namespace graphics_ns_base;
-
 void graphics::init_colors()
 {
 	const char *tmp_col[get_num_colors()] =  {
@@ -262,7 +260,7 @@ graphics::~graphics()
 	}
 };
 
-inline const graphics_base::bounds_status graphics::is_in_bounds(point p) const
+const graphics_base::bounds_status graphics::is_in_bounds(point p) const
 {
 	int rc = BOUNDS_OK;
 
@@ -275,12 +273,12 @@ inline const graphics_base::bounds_status graphics::is_in_bounds(point p) const
 	return (graphics_base::bounds_status)rc;
 };
 
-inline const bool graphics::is_valid_color(color_idx i) const
+const bool graphics::is_valid_color(color_idx i) const
 {
 	return (i >= __first_color__ && i < __last_color__);
 };
 
-inline const bool graphics::is_bright_color(color_idx i) const
+const bool graphics::is_bright_color(color_idx i) const
 {
 	switch (i) {
 	case white:
@@ -295,12 +293,12 @@ inline const bool graphics::is_bright_color(color_idx i) const
 	}
 };
 
-inline const color_val graphics::get_color_val(color_idx i) const
+const color_val graphics::get_color_val(color_idx i) const
 {
 	return _colors->find(i)->second.val;
 };
 
-inline const std::string graphics::get_color_name(color_idx i) const
+const std::string graphics::get_color_name(color_idx i) const
 {
 	return _colors->find(i)->second.name;
 };

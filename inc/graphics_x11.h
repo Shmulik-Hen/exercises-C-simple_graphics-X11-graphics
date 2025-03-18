@@ -78,13 +78,13 @@ public:
 	~graphics();
 
 	// implement pure virtuals
-	inline const bounds_status is_in_bounds(point) const;
-	inline const bool is_valid_color(color_idx) const;
+	const bounds_status is_in_bounds(point) const;
+	const bool is_valid_color(color_idx) const;
 	inline const int get_num_colors() const {return __last_color__;};
 	inline const int get_width() const {return _width;};
 	inline const int get_height() const {return _height;};
-	inline const color_val get_color_val(color_idx) const;
-	inline const std::string get_color_name(color_idx) const;
+	const color_val get_color_val(color_idx) const;
+	const std::string get_color_name(color_idx) const;
 	void draw_pixel(point, color_idx) const;
 	void draw_line(point, point, color_idx) const;
 	void draw_rect(point, size, color_idx, bool) const;
@@ -92,7 +92,7 @@ public:
 	void refresh() const;
 
 	inline const Display* get_display() const {return _display;};
-	inline const bool is_bright_color(color_idx) const;
+	const bool is_bright_color(color_idx) const;
 	void demo() const;
 };
 

@@ -9,7 +9,7 @@ DEPS      := $(OBJS:.o=.d)
 INC_FLAGS := $(addprefix -I,$(INC_DIR))
 CPPFLAGS  := -MMD -MP
 LDFLAGS   += -lX11
-CXXFLAGS  += -Wall $(INC_FLAGS) -g -fdiagnostics-color=always
+CXXFLAGS  += -Wall -Werror $(INC_FLAGS) -g -fdiagnostics-color=always
 
 ifeq ($(DEBUG), 1)
 CXXFLAGS += -DDEBUG_GRFX

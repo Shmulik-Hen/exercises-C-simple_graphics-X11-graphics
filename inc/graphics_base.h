@@ -71,13 +71,13 @@ public:
 		int h = 0;
 	};
 
-	virtual inline const bounds_status is_in_bounds(point) const = 0;
-	virtual inline const bool is_valid_color(color_idx) const = 0;
-	virtual inline const int get_num_colors() const = 0;
-	virtual inline const int get_width() const = 0;
-	virtual inline const int get_height() const = 0;
-	virtual inline const color_val get_color_val(color_idx) const = 0;
-	virtual inline const std::string get_color_name(color_idx) const = 0;
+	virtual const bounds_status is_in_bounds(point) const = 0;
+	virtual const bool is_valid_color(color_idx) const = 0;
+	virtual const int get_num_colors() const = 0;
+	virtual const int get_width() const = 0;
+	virtual const int get_height() const = 0;
+	virtual const color_val get_color_val(color_idx) const = 0;
+	virtual const std::string get_color_name(color_idx) const = 0;
 	virtual void draw_pixel(point, color_idx) const = 0;
 	virtual void draw_line(point, point, color_idx) const = 0;
 	virtual void draw_rect(point, size, color_idx, bool) const = 0;
