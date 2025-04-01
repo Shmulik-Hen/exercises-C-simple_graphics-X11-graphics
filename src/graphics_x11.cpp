@@ -7,8 +7,8 @@ namespace graphics_ns_base {
 
 namespace graphics_ns_x11 {
 
-const int DEFAULT_WIDTH  = 800;
-const int DEFAULT_HEIGHT = 600;
+const int DEFAULT_WIDTH  = 1280;
+const int DEFAULT_HEIGHT = DEFAULT_WIDTH * 10 / 16;
 const char* DEFAULT_NAME = "Graphics_X11";
 
 #define GMASK 0x00FFFFFF
@@ -513,6 +513,7 @@ void graphics::demo() const
 		draw_text(p, s, c);
 	}
 
+#if 0
 	// lines
 	y += gap*2;
 	x = gap;
@@ -549,6 +550,26 @@ void graphics::demo() const
 
 		draw_pixel(p, c);
 	}
+#else
+	int x_ofst = 200;
+	int y_ofst = 200;
+	int x_size = 50;
+	int y_size = 50;
+	color_idx c = white;
+	bool fill = true;
+
+	for (int y = 0; y < 8; y++) {
+		for (int x = 0; x < 8; x++) {
+			point tl = {x * x_size + x_ofst, y * y_size + y_ofst};
+			size sz = {x_size, y_size};
+			// std::cout << tl.x << SEP << tl.y << SEP
+			// 		  << sz.w << SEP << sz.h << std::endl;
+			draw_rect(tl, sz, c, fill);
+			fill = (fill ? false : true);
+		}
+		fill = (fill ? false : true);
+	}
+#endif
 };
 
 int graphics::take_snapshot()
